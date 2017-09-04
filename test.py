@@ -10,3 +10,4 @@ def getDir(path):
 
 
 print('dfsafs')
+print('fdsa')
