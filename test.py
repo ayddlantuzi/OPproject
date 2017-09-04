@@ -6,4 +6,7 @@ def getDir(path):
             print("dirname is:" + dirname)  
         for filename in filenames:    
             print("parent folder is:" + parent)  
-            print("filename with full path:"+ os.path.join(parent,filename))  
+            print("filename with full path:"+ os.path.join(parent,filename))
+
+
+print('dfsafs')
