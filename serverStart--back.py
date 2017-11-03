@@ -14,6 +14,8 @@ tcpSerSock = socket(AF_INET,SOCK_STREAM)
 tcpSerSock.bind(ADDR)
 tcpSerSock.listen(5)
 
+
+
 while True:
 	print('waiting for connection...')
 	tcpCliSock, addr = tcpSerSock.accept()

@@ -1,45 +1,48 @@
-#temp = 'a'
-#while temp!='exit':
-    #temp = input('>:')
-    #print(temp)
-    
-    
+#encoding: utf-8
 import os
 import socket
 import os.path
 import configparser
 import codecs
 import re
-
-test = '1'
+import tempfile
 
 
 #cd /d %EDIR%
 #for /f %%i in ('dir "%EDIR%\run\*.xml" /s /b') do (start %EDIR%\ServiceLoader.exe "auto" "%%i" && ping 127.0.0.1 /n 3 >nul)
-#'
+
 
 def runServiceLoader(path,xml):
-    #print(os.getcwd())
-    #path = 'D:\\26CrazyRunFastSe rver'
-    #os.chdir(path)
-    #print(os.getcwd())
-    #os.system('1start.bat')
-    
-    
-    #a = os.popen("for /f %i in (\'dir \""+path+"\\run\\"+xml+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)")
-    #print(a.read())    
-    
-    #path = 'D:\\26CrazyRunFastServer'
-    #xml = '疯狂跑得快初级场12611'
-    #xml=  '*'
-    
-    os.system("for /f %i in (\'dir \""+path+"\\run\\"+xml+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)")
+    '''
+    运行房间 path路径，xml配置文件list
+    :param path: 游戏路径 str
+    :param xml: 游戏配置文件 list
+    :return: 启动游戏后的消息  格式 'E:/game/游戏/12001.xml   命令执行！/r/n' 返回
+    '''
 
-    #os.system("for /f %i in (\'dir \""+path+"\\run\\*.xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)")
-    
-    #os.system('for /f %i in (\'dir "D:\\26CrazyRunFastServer\\run\\*.xml" /s /b\') do (start D:\\26CrazyRunFastServer\\ServiceLoader.exe "auto" "%i" && ping 127.0.0.1 /n 3 >nul)')
-    
-    
+    out_temp = tempfile.SpooledTemporaryFile(max_size=10 * 1000)
+    fileno = out_temp.fileno()
+
+    xml = '疯狂跑得快初级场12611'
+    path = 'D:\\Game\\26CrazyRunFastServer'
+    a=subprocess.run("for /f %i in (\'dir \""+path+"\\run\\"+xml+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)",stdout=fileno,shell=True)
+    # a.wait()
+    out_temp.seek(0)
+    lines = out_temp.readlines()
+    out_temp.close()
+    linesSend=[]
+    for i in lines[1::2]:
+        linesSend.append(i.decode('gbk'))
+    returnStr = format_RunserviceLoader_Log(linesSend)
+
+    # 另外附带  返回房间信息的  端口状态参数
+    return returnStr
+
+
+    # os.system("for /f %i in (\'dir \""+path+"\\run\\"+xml+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)")
+
+
+
 #修改房间配置
 def editXML(path,line,info):
     pass
@@ -52,12 +55,21 @@ def editINI(path,line,info):
 def update():
     pass
 
-#将cmd启动脚本返回的str 过滤 简约显示，内容：*****.xml  启动成功
-def formatMessage(msg):
-    a = msg.find('run')
-    b = msg.find('.xml')+4
-    c = msg[a:b].split('\\\\')
-    return c[1]+'     启动成功 !'
+
+def format_RunserviceLoader_Log(msgList):
+    '''
+    将cmd启动脚本返回的str 过滤 简约显示，内容：*****.xml  启动成功
+    :param msgList:启动消息List
+    :return:
+    '''
+    returnMSG=''
+    for msg in msgList:
+        a = msg.find('auto')+7
+        b = msg.find('.xml')+4
+        c = msg[a:b].split('\\\\')
+        returnMSG += c[0]+'    启动命令执行！\r\n'
+
+    return returnMSG
 
 
 
@@ -196,7 +208,7 @@ def inputKindID_check(kindid,secondList):
             return i
     return False
 
-        
+
 
 #命令合法性判断
 def command_check(command,currentGame,table):
