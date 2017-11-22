@@ -34,7 +34,7 @@ def runServiceLoader(path,xml):
     if xml_list[0] != 0:
         for xml_name in xml_list[1]:
             a=subprocess.run("for /f %i in (\'dir \""+path+"\\run\\"+xml_name+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)",stdout=fileno,shell=True)
-            # time.sleep(0.5)
+            time.sleep(0.5)
         # a.wait()
         out_temp.seek(0)
         lines = out_temp.readlines()
