@@ -6,8 +6,8 @@ import configparser
 import codecs
 import re
 import tempfile
-
-
+import time
+import subprocess
 #cd /d %EDIR%
 #for /f %%i in ('dir "%EDIR%\run\*.xml" /s /b') do (start %EDIR%\ServiceLoader.exe "auto" "%%i" && ping 127.0.0.1 /n 3 >nul)
 
@@ -19,21 +19,31 @@ def runServiceLoader(path,xml):
     :param xml: 游戏配置文件 list
     :return: 启动游戏后的消息  格式 'E:/game/游戏/12001.xml   命令执行！/r/n' 返回
     '''
+    # 筛选房间xml
+    # 判断传入的是 部分xml还是all 并做初步的错误检查
+    xml_list_getgamexml,error_msg_1 = get_gamexmlANDport(path,xml)
+    # 判断端口是否被占用 占用的剔除
+    xml_list,error_msg = check_xml_port_open(xml_list_getgamexml)
+    error_msg.extend(error_msg_1)
 
     out_temp = tempfile.SpooledTemporaryFile(max_size=10 * 1000)
     fileno = out_temp.fileno()
 
-    xml = '疯狂跑得快初级场12611'
-    path = 'D:\\Game\\26CrazyRunFastServer'
-    a=subprocess.run("for /f %i in (\'dir \""+path+"\\run\\"+xml+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)",stdout=fileno,shell=True)
-    # a.wait()
-    out_temp.seek(0)
-    lines = out_temp.readlines()
-    out_temp.close()
-    linesSend=[]
-    for i in lines[1::2]:
-        linesSend.append(i.decode('gbk'))
-    returnStr = format_RunserviceLoader_Log(linesSend)
+    # xml = '疯狂跑得快初级场12611'
+    # path = 'D:\\Game\\26CrazyRunFastServer'
+    if xml_list[0] != 0:
+        for xml_name in xml_list[1]:
+            a=subprocess.run("for /f %i in (\'dir \""+path+"\\run\\"+xml_name+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)",stdout=fileno,shell=True)
+            # time.sleep(0.5)
+        # a.wait()
+        out_temp.seek(0)
+        lines = out_temp.readlines()
+        out_temp.close()
+        linesSend=[]
+        for i in lines[1::2]:
+            linesSend.append(i.decode('gbk'))
+            print(i)
+        returnStr = format_RunserviceLoader_Log(linesSend)
 
     # 另外附带  返回房间信息的  端口状态参数
     return returnStr
@@ -42,6 +52,91 @@ def runServiceLoader(path,xml):
     # os.system("for /f %i in (\'dir \""+path+"\\run\\"+xml+".xml\" /s /b\') do (start "+path+"\\ServiceLoader.exe \"auto\" \"%i\" && ping 127.0.0.1 /n 3 >nul)")
 
 
+def get_gamexmlANDport(path,xml=None):
+    '''
+    获得run目录下所有的房间配置
+    :param path: 游戏目录
+    :param xml: 启动的 游戏xml
+    :return:[n,[],[]] [xml文件List，对应xml的Port List]
+    端口号都是5位数字
+    '''
+    temp_file = []
+    temp_port = []
+    error_msg = []
+    n = 0
+
+    if type(xml) == list:
+        for file in xml:
+            if not os.path.exists(path+'\\run\\'+file):
+                print(path+'\\run\\'+file+' 文件不存在！')
+                continue
+            port = re.sub('\D','',file)
+            if len(port) == 5:
+                temp_file.append(file)
+                temp_port.append(port)
+                n += 1
+            else:
+                msg = file+'   端口异常！'
+                error_msg.append(msg)
+                print(msg)
+        returnList = [n,temp_file,temp_port]
+    elif xml == 'all':
+        all_file = os.listdir(path + '\\run')
+        for file in all_file:
+            if os.path.splitext(file)[1] == '.xml':
+                port = re.sub('\D','', file)
+                if len(port) == 5:
+                    temp_file.append(file[:-4])
+                    temp_port.append(port)
+                    n += 1
+                else:
+                    msg = file + '   端口异常！'
+                    error_msg.append(msg)
+                    print(msg)
+        returnList = [n, temp_file, temp_port]
+    print('end 2')
+    return returnList,error_msg
+
+def check_xml_port_open(xmllist):
+    print('check_xml_port_open   start')
+    error_msg = []
+    n = xmllist[0]
+    if xmllist[0] != 0:
+        for xml in xmllist[1][:]:
+            print(xml)
+            port = re.sub('\D','',xml)
+            if int(port) > 15000:
+                xmllist[1].remove(xml)
+                n -= 1
+                msg = xml+ '   端口超出范围！'
+                error_msg.append(msg)
+                print(msg)
+
+            if portISopen(int(port)):
+                xmllist[1].remove(xml)
+                n -= 1
+                msg = xml + '   端口被占用！'
+                error_msg.append(msg)
+                print(msg)
+
+        xmllist[0] = n
+
+    print('check_xml_port_open  end')
+    return xmllist,error_msg
+
+
+# 判断端口是否占用  True占用   False未占用
+def portISopen(port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(0.1)
+    try:
+        ADDR = ('127.0.0.1', port)
+        s.connect(ADDR)
+        s.shutdown(2)
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 #修改房间配置
 def editXML(path,line,info):
@@ -73,21 +168,6 @@ def format_RunserviceLoader_Log(msgList):
 
 
 
-
-
-#判断端口是否占用  True占用   False未占用
-def portISopen(port):
-    s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    s.settimeout(0.01)
-    try:
-        ADDR=('127.0.0.1',port)
-        s.connect(ADDR)
-        s.shutdown(2)
-        return True
-    except Exception as e:
-        print(e)
-        return False
-    
 
 #遍历目录下的所有目录和文件  f
 #firstList  根目录下所有的文件和目录
