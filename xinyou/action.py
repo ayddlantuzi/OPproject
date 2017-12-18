@@ -138,18 +138,6 @@ def portISopen(port):
         print(e)
         return False
 
-#修改房间配置
-def editXML(path,line,info):
-    pass
-
-#修改配置文件
-def editINI(path,line,info):
-    pass
-
-#升级文件
-def update():
-    pass
-
 
 def format_RunserviceLoader_Log(msgList):
     '''
@@ -169,7 +157,7 @@ def format_RunserviceLoader_Log(msgList):
 
 
 
-#遍历目录下的所有目录和文件  f
+#遍历目录下的所有目录和文件
 #firstList  根目录下所有的文件和目录
 #secondList 根目录所有包括run子目录的 目录
 #thirdList  所有子目录run 下面的.xml文件 []
@@ -289,31 +277,50 @@ def inputKindID_check(kindid,secondList):
     return False
 
 
+def command_simpleCheck(command,cmdaction):
+    '''
+    对input的字符进行简易 错误判断
 
-#命令合法性判断
+    命令是否是空字符串
+    命令个数是否超过限制 3个
+    命令开头是否为可执行命令
+
+    :param command: input 的字符串
+    :param cmdaction: 命令动作List ['start','update']
+    :return: True 通过  False 有误，重新输入
+    '''
+    cmd = command.strip()
+    if cmd == '':
+        return False
+
+    cmdList = cmd.split()
+    if len(cmdList)>3:
+        print('ERROR!!! 命令数超过3个')
+        return False
+
+    if len(cmdList)>1:
+        if not cmdList[0] in cmdaction:
+            print('ERROR!!!   '+ cmdList[0] +'  命令动作不存在')
+            return False
+
+    return True
+
+
 def command_check(command,currentGame,table):
-    #命令的个数  判断是否输入kindID  还是 start ***
-    secondList = table[1]
-    commandList = command.split()
-    num = len(commandList)
-    if num == 1:
-        command = command.strip()
-        if command.isdigit():
-            gameName = inputKindID_check(command,secondList)
-            if  gameName:
-                return [True,gameName]
-            else:
-                return[False,'KindID 不在列表中！']
-        else:
-            return [False,'命令不正确，请核对KindID！']
-        
-    elif num >=2:
-        if currentGame == '':
-            return [False,'请先输入游戏KindID 再操作！']
-        else:
-            return inputCommand_check(command,currentGame,table)
-    else:
-        return [False,'语法错误！']
+    '''
+    判断命令可执行性质
+    :param command: 接收到的命令
+    :param currentGame: 当前Game
+    :param table: 当前游戏资源列表
+    :return: 返回命令是否可执行 True 可执行   False不可执行
+    '''
+
+
+
+
+
+
+
 
 
 

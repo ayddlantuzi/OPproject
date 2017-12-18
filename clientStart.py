@@ -4,6 +4,7 @@ from xinyou import Color
 from xinyou import action
 from xinyou import caction
 from socket import *
+import os,time
 
 colorPrint = Color()
 # colorPrint.print_green_text('fdsfa')
@@ -11,6 +12,8 @@ colorPrint = Color()
 currentGame=''
 #当前消息
 currentMsg=''
+# 命令动作
+cmdAction = ['start','update','get','push','show']
 
 HOST = '121.196.201.156'
 PORT= 21567
@@ -25,13 +28,12 @@ print('连接成功:'+str(tcpCliSock.getpeername()))
 firstINFO = tcpCliSock.recv(BUFSIZ).decode()
 print(firstINFO)
 #将str table转换成List
-table = action.unpackDirINFOstr(firstINFO)
+table = caction.unpackDirINFOstr(firstINFO)
 print(table)
 
 
 #打印所有游戏主目录
-for i in table[1]:
-    print(i)
+caction.printGameDir(table[1])
 
 
 
@@ -51,36 +53,38 @@ while True:
     #
 
     data = input(currentGame+':>')
-    
-    #空命令判断
-    if data.strip() == '':
-        temp=True
-        continue
-    
-    #判断语句合法性
-    # commandStatus = action.command_check(data, currentGame, table)
-    # print('commandStatus',end='')
-    # print(commandStatus)
-    # if commandStatus[0]:
-    #     if commandStatus[1].isdigit():
-    #         tcpCliSock.send((currentGame+'@'+data).encode())
-    #     else:
-    #         currentGame = commandStatus[1]
-    #         temp=True
-    # else:
-    #     currentMsg = commandStatus[1]
-    #     temp=True
-    #     print(currentMsg)
-        
 
-    #确认语句可以执行，发送command
+    #命令简单判断
+    if not caction.command_simpleCheck(data,cmdAction,currentGame,table[1]):
+        continue
+
+    if data == 'cls':
+        os.system('cls')
+        continue
+
+    if data == 'exit':
+        tcpCliSock.close()
+        break
+
     if not data:
         break
+
+
+
+    # 发送命令
     tcpCliSock.send(data.encode())
+    time.sleep(0.1)
+
+    # 接收数据
     data = tcpCliSock.recv(BUFSIZ).decode()
     if not data:
         break
-    print(data)
+    # print(data)
+
+    caction.recvBackMSG(data,currentGame)
+    back_messageList = data.split('@')
+    if back_messageList[0] =='currentGame':
+        currentGame = back_messageList[1]
 
     # colorPrint.print_green_text(action.formatMessage(data))
 
