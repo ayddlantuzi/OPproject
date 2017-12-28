@@ -13,7 +13,7 @@ currentGame=''
 #当前消息
 currentMsg=''
 # 命令动作
-cmdAction = ['start','update','get','push','show']
+cmdAction = ['start','update','get','show']
 
 HOST = '121.196.201.156'
 PORT= 21567
@@ -85,6 +85,8 @@ while True:
     back_messageList = data.split('@')
     if back_messageList[0] =='currentGame':
         currentGame = back_messageList[1]
+    elif back_messageList[0] == 'transfer':
+        pass
 
     # colorPrint.print_green_text(action.formatMessage(data))
 

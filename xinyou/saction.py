@@ -386,15 +386,59 @@ def twoCommand_check(cmdList,currentGame):
         pass
 
     elif cmdList[0] == 'get':
-        pass
-
-    elif cmdList[0] == 'push':
-        pass
+        # get ini 下载当前游戏 目录下的所有ini到桌面
+        # get *** 下载明确的文件名
+        # 核对文件中的目录 *** 是否存在
+        msg = get_filter_File(gamedir,currentGame,'ini')
 
     elif cmdList[0] == 'update':
-        pass
+        # update exe 升级servicesLoader
+        # update dll 升级游戏dll
+        # 升级前 建立备份目录  并备份被升级的文件
+        if cmdList[1] == 'exe':
+            pass
+        elif cmdList[1] == 'dll':
+            pass
 
     return msg
+
+def get_filter_File(gamedir,currentGame,get_fuzzy):
+    '''                                     固定桌面目录
+    get ini 用，获取游戏目录下 特定后缀 文件
+    :param gamedir: 游戏总目录
+    :param currentGame: 游戏下  单个游戏目录
+    :param get: 文件后缀 'ini' 返回所有ini文件   其他****   返回****文件
+    :return:
+    '''
+    msg = ''
+    filelist = []
+    gamefile = os.listdir(gamedir+'\\'+currentGame[0])
+    if get_fuzzy == 'ini':
+        for file in gamefile:
+            if file[-4:] == suffix:
+                sourceServer ='\\'+currentGame[0] + '\\' + file
+                targetClient = 'D:\\Desktop\\'+currentGame[0]+'\\'+file
+                filelist.append([sourceServer,targetClient])
+    else:
+        if get_fuzzy in gamefile:
+            sourceServer = '\\' + currentGame[0] + '\\' + get_fuzzy
+            targetClient = 'D:\\Desktop\\' + currentGame[0] + '\\' + get_fuzzy
+            filelist.append([sourceServer, targetClient])
+        else:
+            msg = ('%s@%s' % ('print', get_fuzzy+'在游戏目录'+currentGame[0]+'  中未找到！'))
+            return msg
+
+    return msg
+
+def getlist_2_str(filelist):
+    msg = 'get@'
+    if len(filelist) != 0:
+        for list in filelist:
+
+            for i in list:
+                msg += i + '#'
+            msg = msg[:-1] + '?'
+    return msg[:-1]
 
 
 def command_ServerCheck(command,currentGame,table):

@@ -8,7 +8,7 @@ import re
 import tempfile
 import time
 import subprocess
-
+import paramiko
 
 
 def command_simpleCheck(command,cmdaction,currentGame,gameDir):
@@ -155,3 +155,47 @@ def printGameDir(gameDirList):
 
 
 
+def transfer_File(host, fileList_Info,mode='put'):
+    '''
+    上传文件到游戏服务器
+    :param host: 游戏服务器ip   str
+    :param fileList_Info: 上传文件路径 和 目的文件路径(含文件名)  [['上传路径','目的路径']['','']['','']['','']]
+    :param mode:   put 上传   get 下载
+    :return: 执行在client端  消息直接打印
+    '''
+    transport  = paramiko.Transport(host,22)
+    transport.connect(username='xinyou',password='EVxBhaTCWxUt')
+
+    if len(fileList_Info) != 0:
+        try:
+            sftp = paramiko.SFTPClient.from_transport(transport)
+        except Exception as e:
+            print(e)
+
+        for filelist in fileList_Info:
+            try:
+                if mode == 'put':
+                    sftp.put(filelist[0],filelist[1])
+                elif mode == 'get':
+                    sftp.get(filelist[0],filelist[1])
+                else:
+                    print(mode + ' transferFile 模式错误！')
+            except Exception as e:
+                print(filelist[0],end='')
+                print(filelist[1],end='')
+                print(e)
+    else:
+       print('上传文件列表为空！')
+
+def getlist_str_2_list(liststr):
+    '''
+    get 操作  str 2 list
+    :param liststr:
+    :return:[[],[],[],[],[]]
+    '''
+    returnList = []
+    list1 = liststr.split('?')
+    for l in list1:
+        a = l.split('#')
+        returnList.append(a)
+    return returnList
