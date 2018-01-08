@@ -8,8 +8,11 @@ import re
 import tempfile
 import time
 import subprocess
+import shutil
 
 gamedir = ''
+# 默认桌面目录
+desktop_dir = 'D:\\Desktop\\'
 
 def runServiceLoader(path,xml):
     '''
@@ -372,7 +375,7 @@ def twoCommand_check(cmdList,currentGame):
     global  gamedir
     if currentGame[0] == '':
         msg = ('%s@%s' % ('print', '请先选择游戏目录！'))
-        return msg
+        return msg,False
 
 
     if cmdList[0] == 'start':
@@ -388,8 +391,16 @@ def twoCommand_check(cmdList,currentGame):
     elif cmdList[0] == 'get':
         # get ini 下载当前游戏 目录下的所有ini到桌面
         # get *** 下载明确的文件名
-        # 核对文件中的目录 *** 是否存在
-        msg = get_filter_File(gamedir,currentGame,'ini')
+        # 1、检查目录中的  是否存在ini文件，或者具体文件名称是否存在
+        # 2、
+        print(cmdList)
+        msg = get_filter_File(gamedir,currentGame[0],cmdList[1])
+
+    elif cmdList[0] == 'put':
+
+        msg = put_check_server(gamedir,currentGame[0],cmdList[1])
+
+        return msg
 
     elif cmdList[0] == 'update':
         # update exe 升级servicesLoader
@@ -402,36 +413,115 @@ def twoCommand_check(cmdList,currentGame):
 
     return msg
 
+def put_check_server(gamedir,currentGame,filelist_str):
+    '''
+    put  上传用，判断目录是否存在，上传做备份
+    :param gamedir:
+    :param currentGame:
+    :param get_fuzzy:
+    :return:  返回msg  msg1     msg print备份消息     msg1 put消息
+    '''
+    global  desktop_dir
+    msg=''
+    print('gamedir:',end='')
+    print(gamedir)
+    print('currentGame:',end='')
+    print(currentGame)
+    gamefile = os.listdir(gamedir+'\\'+currentGame)
+
+    filelist = filelist_str.split('?')
+
+    backupfile = []
+
+    for file in filelist:
+        if file in gamefile:
+            backupfile.append(file)
+
+    if len(backupfile) >0:
+        msg = backup_file(gamedir,currentGame,backupfile,backupfile[0][-3:])
+        msg += '+'
+
+
+    # 传输 源目录 目标目录
+    for file in filelist:
+        targetClient ='\\'+currentGame + '\\' + file
+        sourceServer = desktop_dir+currentGame+'\\'+file
+        filelist.append([sourceServer,targetClient])
+
+    msg += 'put@'+transfer_list_2_str(filelist_str)
+
+    return msg
+
+
+
+
+def backup_file(gamedir,currentGame,fileList,folder):
+    '''
+    升级文件  ini 时   备份文件用
+    :param gamedir:
+    :param currentGame:
+    :param fileList:
+    :param folder:  备份根目录backup的下一级目录  ini  dll  serviceLoader
+    :return:
+    '''
+    # 游戏目录备份 根目录
+    backup_dir = gamedir+'\\'+currentGame+'\\backup'
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+
+    # 游戏目录  备份目录
+    backup_folder = backup_dir+'\\'+folder
+    if not os.path.exists(backup_folder):
+        os.makedirs(backup_folder)
+
+    # 根据当前日期时间 创建备份子目录
+    newfolder = time.strftime('%Y-%m-%d %H %M %S',time.localtime(time.time()))
+    backup_path = backup_folder + '\\'+newfolder+'\\'
+    os.makedirs(backup_path)
+
+
+    msg = 'print@'
+    for file in fileList:
+        shutil.copy(gamedir+'\\'+currentGame+'\\'+file,backup_path)
+        msg += '文件 ' + file + ' 备份至 游戏服务器 ' + backup_path + '  目录！\n'
+
+    return msg[:-1]
+
+
+
 def get_filter_File(gamedir,currentGame,get_fuzzy):
-    '''                                     固定桌面目录
+    '''                                      固定桌面目录
     get ini 用，获取游戏目录下 特定后缀 文件
     :param gamedir: 游戏总目录
     :param currentGame: 游戏下  单个游戏目录
     :param get: 文件后缀 'ini' 返回所有ini文件   其他****   返回****文件
     :return:
     '''
+
+    global desktop_dir
+
     msg = ''
     filelist = []
-    gamefile = os.listdir(gamedir+'\\'+currentGame[0])
+    gamefile = os.listdir(gamedir+'\\'+currentGame)
     if get_fuzzy == 'ini':
         for file in gamefile:
-            if file[-4:] == suffix:
-                sourceServer ='\\'+currentGame[0] + '\\' + file
-                targetClient = 'D:\\Desktop\\'+currentGame[0]+'\\'+file
+            if file[-3:] == 'ini':
+                sourceServer ='\\'+currentGame + '\\' + file
+                targetClient = desktop_dir+currentGame+'\\'+file
                 filelist.append([sourceServer,targetClient])
     else:
         if get_fuzzy in gamefile:
-            sourceServer = '\\' + currentGame[0] + '\\' + get_fuzzy
-            targetClient = 'D:\\Desktop\\' + currentGame[0] + '\\' + get_fuzzy
+            sourceServer = '\\' + currentGame + '\\' + get_fuzzy
+            targetClient = desktop_dir + currentGame + '\\' + get_fuzzy
             filelist.append([sourceServer, targetClient])
         else:
-            msg = ('%s@%s' % ('print', get_fuzzy+'在游戏目录'+currentGame[0]+'  中未找到！'))
+            msg = ('%s@%s' % ('print', get_fuzzy+'在游戏目录'+currentGame+'  中未找到！'))
             return msg
-
+    msg =  ('%s@%s' % ('get',transfer_list_2_str(filelist)))
     return msg
 
-def getlist_2_str(filelist):
-    msg = 'get@'
+def transfer_list_2_str(filelist):
+    msg = ''
     if len(filelist) != 0:
         for list in filelist:
 
@@ -460,7 +550,7 @@ def command_ServerCheck(command,currentGame,table):
         msg = oneCommand_check(cmdList[0],table[1],currentGame)
     else:
         msg = twoCommand_check(cmdList,currentGame)
-
+        return msg
 
     return msg
 

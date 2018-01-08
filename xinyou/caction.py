@@ -10,6 +10,8 @@ import time
 import subprocess
 import paramiko
 
+# 默认桌面目录
+desktop_dir = 'D:\\Desktop\\'
 
 def command_simpleCheck(command,cmdaction,currentGame,gameDir):
     '''
@@ -28,35 +30,87 @@ def command_simpleCheck(command,cmdaction,currentGame,gameDir):
         return False
 
     cmdList = cmd.split()
+    if len(cmdList) == 1:
+        return True
+
     if len(cmdList)>3:
         print('错误!!!  命令数超过3个')
         return False
 
-    if len(cmdList)>1:
+    if len(cmdList)==2:
+        if currentGame == '':
+            print('请先选择游戏目录:')
+            printGameDir(gameDir)
+            return False
+
         if not cmdList[0] in cmdaction:
             print('错误!!!   '+ cmdList[0] +'  命令动作不存在')
             return False
-        else:
-            if currentGame == '':
-                print('请先选择游戏目录:')
-                printGameDir(gameDir)
-                return False
+        elif cmdList[0] == 'put':
+            # 判断桌面目录是否存在  上传的文件是否存在
+            return put_check(currentGame,cmdList[1])
+
     return True
 
 
-def recvBackMSG(data,currentGame):
+def put_check(currentGame,get_fuzzy):
     '''
-    接收动作执行后的 返回消息
-    :param data: 返回的str
-    :return:.
+    上传文件时，先判断要上传的文件是否存在
+    :param currentGame:
+    :return: True  文件存在  False 文件不存在
     '''
-    back_messageList = data.split('@')
-    if back_messageList[0] =='currentGame':
-        currentGame = back_messageList[1]
+    if not os.path.exists(desktop_dir+currentGame):
+        os.makedirs(desktop_dir + currentGame)
+        print(desktop_dir + currentGame + '   目录不存在，创建成功,请将文件放入此文件夹后再操作！')
+        return False
 
 
-    if back_messageList[0] =='print':
-        print(back_messageList[1])
+    # filelist = []
+    temp = False
+    putfile_str = ''
+    gamefile = os.listdir(desktop_dir+'\\'+currentGame)
+    if get_fuzzy == 'ini':
+        for file in gamefile:
+            if file[-3:] == 'ini':
+                temp = True
+                putfile_str += file + '?'
+
+                # target ='\\'+currentGame + '\\' + file
+                # source = desktop_dir+currentGame+'\\'+file
+                # filelist.append([source,target])
+
+    else:
+        if get_fuzzy in gamefile:
+            temp = True
+            putfile_str = get_fuzzy +'?'
+            # target = '\\' + currentGame + '\\' + file
+            # source = desktop_dir + currentGame + '\\' + file
+            # filelist.append([source, target])
+        else:
+            print('桌面文件夹 '+currentGame+' 中没有 '+get_fuzzy+' 文件！')
+            return False
+
+    if temp:
+        return ['put',putfile_str[:-1]]
+    else:
+        print('桌面文件夹 '+currentGame+' 中没有 '+'ini 的文件！')
+        return False
+
+
+
+# def recvBackMSG(data,currentGame):
+#     '''
+#     接收动作执行后的 返回消息
+#     :param data: 返回的str
+#     :return:.
+#     '''
+#     back_messageList = data.split('@')
+#     if back_messageList[0] =='currentGame':
+#         currentGame = back_messageList[1]
+#
+#
+#     if back_messageList[0] =='print':
+#         print(back_messageList[1])
 
 
 
@@ -155,7 +209,7 @@ def printGameDir(gameDirList):
 
 
 
-def transfer_File(host, fileList_Info,mode='put'):
+def transfer_File(host,currentGame,fileList_Info,mode='put'):
     '''
     上传文件到游戏服务器
     :param host: 游戏服务器ip   str
@@ -166,20 +220,32 @@ def transfer_File(host, fileList_Info,mode='put'):
     transport  = paramiko.Transport(host,22)
     transport.connect(username='xinyou',password='EVxBhaTCWxUt')
 
+    # 上传或下载前检查  桌面是否有currentGame目录 没有目录 默认创建
+    if mode == 'get':
+        if not os.path.exists(desktop_dir+currentGame):
+            os.makedirs(desktop_dir+currentGame)
+            print(desktop_dir+currentGame+'   目录不存在，创建成功！')
+
+
     if len(fileList_Info) != 0:
         try:
             sftp = paramiko.SFTPClient.from_transport(transport)
         except Exception as e:
             print(e)
+        # 打印sftp 传输的 文件源和目标地址list
+        # print('filelist:',end='')
+        # print(fileList_Info)
 
         for filelist in fileList_Info:
             try:
                 if mode == 'put':
                     sftp.put(filelist[0],filelist[1])
+                    print('某某文件上传成功')
                 elif mode == 'get':
                     sftp.get(filelist[0],filelist[1])
+                    print('文件   '+filelist[0].split('\\')[-1]+'  成功下载到桌面目录    '+currentGame)
                 else:
-                    print(mode + ' transferFile 模式错误！')
+                    print(mode + ' transfe rFile 模式错误！')
             except Exception as e:
                 print(filelist[0],end='')
                 print(filelist[1],end='')
@@ -187,9 +253,10 @@ def transfer_File(host, fileList_Info,mode='put'):
     else:
        print('上传文件列表为空！')
 
-def getlist_str_2_list(liststr):
+
+def transfer_list_str_2_list(liststr):
     '''
-    get 操作  str 2 list
+    get 操作  str 2 list           transfer文件用   Server  返回的 字符串  转换成 列表
     :param liststr:
     :return:[[],[],[],[],[]]
     '''

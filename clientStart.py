@@ -2,7 +2,7 @@
 
 from xinyou import Color
 from xinyou import action
-from xinyou import caction
+from xinyou import caction,saction
 from socket import *
 import os,time
 
@@ -13,7 +13,7 @@ currentGame=''
 #当前消息
 currentMsg=''
 # 命令动作
-cmdAction = ['start','update','get','show']
+cmdAction = ['start','update','get','put','show']
 
 HOST = '121.196.201.156'
 PORT= 21567
@@ -55,8 +55,12 @@ while True:
     data = input(currentGame+':>')
 
     #命令简单判断
-    if not caction.command_simpleCheck(data,cmdAction,currentGame,table[1]):
+    checkResult = caction.command_simpleCheck(data,cmdAction,currentGame,table[1])
+    if checkResult == False:
         continue
+    elif type(checkResult) == list:
+        if checkResult[0] == 'put':
+            data = 'put ' + checkResult[1]
 
     if data == 'cls':
         os.system('cls')
@@ -65,6 +69,8 @@ while True:
     if data == 'exit':
         tcpCliSock.close()
         break
+
+
 
     if not data:
         break
@@ -81,14 +87,24 @@ while True:
         break
     # print(data)
 
-    caction.recvBackMSG(data,currentGame)
-    back_messageList = data.split('@')
-    if back_messageList[0] =='currentGame':
-        currentGame = back_messageList[1]
-    elif back_messageList[0] == 'transfer':
-        pass
-
-    # colorPrint.print_green_text(action.formatMessage(data))
+    # caction.recvBackMSG(data,currentGame)
+    back_msgList = data.split('+')
+    print(back_msgList)
+    for onecmd in back_msgList:
+        back_msg_str = onecmd.split('@')
+        if back_msg_str[0]=='print':
+            print(back_msg_str[1])
+        elif back_msg_str[0] =='currentGame':
+            currentGame = back_msg_str[1]
+        elif back_msg_str[0] == 'get':
+            caction.transfer_File(HOST,currentGame,caction.transfer_list_str_2_list(back_msg_str[1]),'get')
+        elif back_msg_str[0] == 'put':
+            caction.transfer_File(HOST,currentGame,caction.transfer_list_str_2_list(back_msg_str[1]),'put')
+        else:
+            pass
+            # print('client调试',end='')
+            # print(back_msg_str)
+        # colorPrint.print_green_text(action.formatMessage(data))
 
 tcpCliSock.close()
 
