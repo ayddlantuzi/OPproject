@@ -430,7 +430,7 @@ def put_check_server(gamedir,currentGame,filelist_str):
     gamefile = os.listdir(gamedir+'\\'+currentGame)
 
     filelist = filelist_str.split('?')
-
+    source_target_list = []
     backupfile = []
 
     for file in filelist:
@@ -446,9 +446,9 @@ def put_check_server(gamedir,currentGame,filelist_str):
     for file in filelist:
         targetClient ='\\'+currentGame + '\\' + file
         sourceServer = desktop_dir+currentGame+'\\'+file
-        filelist.append([sourceServer,targetClient])
+        source_target_list.append([sourceServer,targetClient])
 
-    msg += 'put@'+transfer_list_2_str(filelist_str)
+    msg += 'put@'+transfer_list_2_str(source_target_list)
 
     return msg
 
@@ -483,7 +483,7 @@ def backup_file(gamedir,currentGame,fileList,folder):
     msg = 'print@'
     for file in fileList:
         shutil.copy(gamedir+'\\'+currentGame+'\\'+file,backup_path)
-        msg += '文件 ' + file + ' 备份至 游戏服务器 ' + backup_path + '  目录！\n'
+        msg += '被覆盖的文件 ' + file + ' 备份至 游戏服务器目录  ' + backup_path + '\n'
 
     return msg[:-1]
 

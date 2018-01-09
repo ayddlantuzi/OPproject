@@ -89,6 +89,7 @@ while True:
 
     # caction.recvBackMSG(data,currentGame)
     back_msgList = data.split('+')
+    print('client 接收到的消息#')
     print(back_msgList)
     for onecmd in back_msgList:
         back_msg_str = onecmd.split('@')

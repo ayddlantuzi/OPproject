@@ -240,7 +240,7 @@ def transfer_File(host,currentGame,fileList_Info,mode='put'):
             try:
                 if mode == 'put':
                     sftp.put(filelist[0],filelist[1])
-                    print('某某文件上传成功')
+                    print('文件 '+filelist[0].split('\\')[-1]+' 上传成功!')
                 elif mode == 'get':
                     sftp.get(filelist[0],filelist[1])
                     print('文件   '+filelist[0].split('\\')[-1]+'  成功下载到桌面目录    '+currentGame)
