@@ -386,7 +386,7 @@ def twoCommand_check(cmdList,currentGame):
             msg = runServiceLoader(gamedir+'\\'+currentGame[0],cmdList[1])
 
     elif cmdList[0] == 'show':
-        pass
+        msg = show_cmd_server(gamedir,currentGame[0],cmdList[1])
 
     elif cmdList[0] == 'get':
         # get ini 下载当前游戏 目录下的所有ini到桌面
@@ -412,6 +412,44 @@ def twoCommand_check(cmdList,currentGame):
             pass
 
     return msg
+
+def show_cmd_server(gamedir,currentGame,info):
+    '''
+    显示游戏目录  文件，房间列表 等等
+    :param gamedir: 游戏根目录
+    :param currentGame: 游戏目录
+    :param info: 显示的内容  room 房间(包括是否启用）   file  文件(包括修改时间)
+    :return: 返回打印的消息
+    '''
+    msg = ''
+    if info == 'room':
+        path = gamedir+currentGame+'\\run'
+        print(path)
+        if os.path.exists(path):
+            run_folder_files = os.listdir(path)
+            xmlfile = []
+            for i in run_folder_files:
+                if i[-4:] =='.xml':
+                    xmlfile.append(i)
+            if len(xmlfile)>0:
+                for i in xmlfile:
+                    n='    未启用！'
+                    if portISopen(getPortFromXML(i)):
+                        # 端口状态，端口被占用 n='1'
+                        n='    已启用！'
+                    msg += i+n +'\n'
+                msg = msg[:-1]
+            else:
+                msg = '游戏目录 ' + path + '中没有房间配置文件！'
+        else:
+            msg = '目录 ' + path + '不存在！'
+    elif info == 'file':
+        pass
+    else:
+        msg = '命令不正确,参考：\nshow room 显示房间\nshow file 显示文件'
+    return 'print@'+msg
+
+
 
 def put_check_server(gamedir,currentGame,filelist_str):
     '''
