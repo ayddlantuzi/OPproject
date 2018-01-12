@@ -12,6 +12,10 @@ import paramiko
 
 # 默认桌面目录
 desktop_dir = 'D:\\Desktop\\'
+# svn目录
+svnServiceLoader_dir = 'D:\\SvnGame\\服务器版本\\游戏服务VS2015\\'
+# 单款目录
+dlls_dir = 'D:\\SvnGame\\服务器版本\\单款游戏服务\\'
 
 def command_simpleCheck(command,cmdaction,currentGame,gameDir):
     '''
@@ -33,8 +37,8 @@ def command_simpleCheck(command,cmdaction,currentGame,gameDir):
     if len(cmdList) == 1:
         return True
 
-    if len(cmdList)>3:
-        print('错误!!!  命令数超过3个')
+    if len(cmdList)>2:
+        print('错误!!!  命令数超过2个')
         return False
 
     if len(cmdList)==2:
@@ -49,15 +53,73 @@ def command_simpleCheck(command,cmdaction,currentGame,gameDir):
         elif cmdList[0] == 'put':
             # 判断桌面目录是否存在  上传的文件是否存在
             return put_check(currentGame,cmdList[1])
+        elif cmdList[0] == 'update':
+            # 判断上传的文件是否存在
+            return update_check(currentGame,cmdList[1])
 
     return True
+
+
+def update_check(currentGame,cmd_1):
+    '''
+    update 语句检查
+    update exe  更新serviceLoader文件   确认目录是否存在，确认目录下是否有文件
+    update dll  更新dll文件             确认目录是否存在，目录下是否有当前 游戏名称的dll
+    :param currentGame:
+    :param cmd_1:
+    :return: False 不通过
+    通过： 返回
+
+    '''
+    global svnServiceLoader_dir
+    global dll_dir
+
+    exe_file_str = ''
+    if currentGame == '':
+        print('请先选择 游戏目录！')
+        return False
+
+    if cmd_1 == 'exe':
+        if os.path.exists(svnServiceLoader_dir):
+            file = os.listdir(svnServiceLoader_dir)
+            print(file)
+            if len(file) == 0:
+                print(svnServiceLoader_dir+' 下没有更新文件！')
+            else:
+                for f in file:
+                    if not os.path.isdir(svnServiceLoader_dir+f):
+                        flist = os.path.splitext(f)
+                        if flist[1] == '.dll':
+                            exe_file_str += f+'?'
+                exe_file_str += 'ServiceLoader.exe?'+svnServiceLoader_dir
+                print(exe_file_str)
+                return ['update',exe_file_str]
+        else:
+            print('本地目录 '+svnServiceLoader_dir+' 不存在！')
+    elif cmd_1 == 'dll':
+        dll_name = re.sub('\d','',currentGame)+'.dll'
+        dll_dir =dlls_dir + dll_name
+        if os.path.exists(dll_dir):
+            # 返回上传的dll文件
+            return ['update',dll_name+'?'+dlls_dir]
+        else:
+            print('文件或目录 '+dlls_dir+' 不存在，请检查！')
+            print('Tip：游戏目录命名规则  kindID+dll名称   例：22CrazyLand3renServer\n'
+                  '     update dll 命令会根据  22CrazyLand3renServer 到dll文件夹寻找 CrazyLand3renServer.dll 文件！')
+    else:
+        print('update '+cmd_1+'  命令不正确！')
+        print('命令帮助  help update')
+
+    return False
+
 
 
 def put_check(currentGame,get_fuzzy):
     '''
     上传文件时，先判断要上传的文件是否存在
     :param currentGame:
-    :return: True  文件存在  False 文件不存在
+    :return: False 文件不存在
+    文件存在  返回['put',文件列表 list]   list 用?分隔
     '''
     if not os.path.exists(desktop_dir+currentGame):
         os.makedirs(desktop_dir + currentGame)
@@ -244,6 +306,9 @@ def transfer_File(host,currentGame,fileList_Info,mode='put'):
                 elif mode == 'get':
                     sftp.get(filelist[0],filelist[1])
                     print('文件   '+filelist[0].split('\\')[-1]+'  成功下载到桌面目录    '+currentGame)
+                elif mode == 'update':
+                    sftp.put(filelist[0], filelist[1])
+                    print('文件   '+filelist[0].split('\\')[-1]+'  更新成功！')
                 else:
                     print(mode + ' transfe rFile 模式错误！')
             except Exception as e:

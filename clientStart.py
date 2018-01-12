@@ -61,7 +61,8 @@ while True:
     elif type(checkResult) == list:
         if checkResult[0] == 'put':
             data = 'put ' + checkResult[1]
-
+        elif checkResult[0] == 'update':
+            data = 'update '+ checkResult[1]
     if data == 'cls':
         os.system('cls')
         continue
@@ -101,6 +102,8 @@ while True:
             caction.transfer_File(HOST,currentGame,caction.transfer_list_str_2_list(back_msg_str[1]),'get')
         elif back_msg_str[0] == 'put':
             caction.transfer_File(HOST,currentGame,caction.transfer_list_str_2_list(back_msg_str[1]),'put')
+        elif back_msg_str[0] =='update':
+            caction.transfer_File(HOST,currentGame,caction.transfer_list_str_2_list(back_msg_str[1]),'update')
         else:
             pass
             # print('client调试',end='')

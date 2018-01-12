@@ -362,7 +362,7 @@ def oneCommand_check(str,secondList,currentGame):
     if status:
         msg = ('%s@%s' % ('currentGame', currentGame[0]))
     else:
-        msg = ('%s@%s 匹配不到游戏目录，请重新输入！' % ('print', str))
+        msg = ('%s@%s 匹配不到游戏目录，请重新输入---！' % ('print', str))
     return msg
 
 def twoCommand_check(cmdList,currentGame):
@@ -393,11 +393,9 @@ def twoCommand_check(cmdList,currentGame):
         # get *** 下载明确的文件名
         # 1、检查目录中的  是否存在ini文件，或者具体文件名称是否存在
         # 2、
-        print(cmdList)
         msg = get_filter_File(gamedir,currentGame[0],cmdList[1])
 
     elif cmdList[0] == 'put':
-
         msg = put_check_server(gamedir,currentGame[0],cmdList[1])
 
         return msg
@@ -406,11 +404,38 @@ def twoCommand_check(cmdList,currentGame):
         # update exe 升级servicesLoader
         # update dll 升级游戏dll
         # 升级前 建立备份目录  并备份被升级的文件
-        if cmdList[1] == 'exe':
-            pass
-        elif cmdList[1] == 'dll':
-            pass
+        msg = update_cmd_server(gamedir,currentGame[0],cmdList[1])
 
+
+    return msg
+
+def update_cmd_server(gamedir,currentGame,file_str):
+    '''
+    更新 exe   dll  命令
+    :param gamedir:
+    :param currentGame:
+    :param file_str:
+    :return:
+    '''
+    source_target_list = []
+    rev_update_cmd = file_str.split('?')
+    source_dir = rev_update_cmd.pop()
+    len_rev_cmd = len(rev_update_cmd)
+    msg = ''
+    if  len_rev_cmd == 1:
+        # 只有一个文件  备份并更新dll
+        msg = backup_file(gamedir,currentGame,rev_update_cmd,'dll')
+    elif len_rev_cmd > 0:
+        # 多个文件 备份并更新ServiceLoader
+        msg = backup_file(gamedir, currentGame, rev_update_cmd, 'exe')
+
+    # 传输 源目录 目标目录
+    for file in rev_update_cmd:
+        targetClient = '\\'+currentGame+'\\'+file
+        sourceServer = source_dir + file
+        source_target_list.append([sourceServer,targetClient])
+
+    msg += '+update@' + transfer_list_2_str(source_target_list)
     return msg
 
 def show_cmd_server(gamedir,currentGame,info):
@@ -424,7 +449,6 @@ def show_cmd_server(gamedir,currentGame,info):
     msg = ''
     if info == 'room':
         path = gamedir+currentGame+'\\run'
-        print(path)
         if os.path.exists(path):
             run_folder_files = os.listdir(path)
             xmlfile = []
@@ -444,7 +468,15 @@ def show_cmd_server(gamedir,currentGame,info):
         else:
             msg = '目录 ' + path + '不存在！'
     elif info == 'file':
-        pass
+        path = gamedir+currentGame
+        if os.path.exists(path):
+            game_folder_files = os.listdir(path)
+        if len(game_folder_files)>0:
+            for file in game_folder_files:
+                msg += file + '    ' +time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(path+'\\'+file))) +'\n'
+            msg = msg[:-1]
+        else:
+            msg = '游戏目录 ' + path + '中没有文件！'
     else:
         msg = '命令不正确,参考：\nshow room 显示房间\nshow file 显示文件'
     return 'print@'+msg
@@ -477,6 +509,7 @@ def put_check_server(gamedir,currentGame,filelist_str):
 
     if len(backupfile) >0:
         msg = backup_file(gamedir,currentGame,backupfile,backupfile[0][-3:])
+        # print@......+put@..... client 接收后   split'+'
         msg += '+'
 
 
@@ -502,12 +535,12 @@ def backup_file(gamedir,currentGame,fileList,folder):
     :param folder:  备份根目录backup的下一级目录  ini  dll  serviceLoader
     :return:
     '''
-    # 游戏目录备份 根目录
+    # 游戏目录备份 根目录   例E:\Game\24StandLand3renServer\backup
     backup_dir = gamedir+'\\'+currentGame+'\\backup'
     if not os.path.exists(backup_dir):
         os.makedirs(backup_dir)
 
-    # 游戏目录  备份目录
+    # 游戏目录  备份目录例E:\Game\24StandLand3renServer\backup\ini
     backup_folder = backup_dir+'\\'+folder
     if not os.path.exists(backup_folder):
         os.makedirs(backup_folder)
@@ -517,13 +550,16 @@ def backup_file(gamedir,currentGame,fileList,folder):
     backup_path = backup_folder + '\\'+newfolder+'\\'
     os.makedirs(backup_path)
 
+    if folder in ['ini','dll','exe']:
+        msg = 'print@'
+        for file in fileList:
+            shutil.copy(gamedir+'\\'+currentGame+'\\'+file,backup_path)
+            msg +=  '被覆盖文件'+ file +' 已备份！\n'
+        msg = msg[:-1]
+    else:
+        msg='print@saction.py  backup_file方法错误，请检查代码！'
 
-    msg = 'print@'
-    for file in fileList:
-        shutil.copy(gamedir+'\\'+currentGame+'\\'+file,backup_path)
-        msg += '被覆盖的文件 ' + file + ' 备份至 游戏服务器目录  ' + backup_path + '\n'
-
-    return msg[:-1]
+    return msg
 
 
 
@@ -577,6 +613,7 @@ def command_ServerCheck(command,currentGame,table):
     :param table:当前服务器 游戏资源表
     :return:
     '''
+
     cmdList = command.split()
     cmdNum = len(cmdList)
 
@@ -592,3 +629,63 @@ def command_ServerCheck(command,currentGame,table):
 
     return msg
 
+
+def format_printMSG(plist,align_column_int,align_column_maxlen):
+    '''
+    对返回的 print消息 格式化列
+    :param plist:打印消息的list
+    :param align_column_int:  要对齐的列
+    :return: 格式化后的输出消息
+
+    [['第一列', '第二列231', '三'], ['第一列', '第二列2啊啊啊啊31', '三'], ['第一列', '第二列2', '三']]   2
+                    ↓↓  ↓↓  ↓↓
+    第一列         第二列231                三
+    第一列         第二列2啊啊啊啊31         三
+    第一列         第二列2                  三
+    '''
+    # 定义format  正则表达式
+    def_format = ''
+    length = len(plist[0])
+    n=0
+    listnum = 0
+    while length > 0:
+        def_format += '{'+str(n)+':'
+        if align_column_int-1 == n:
+            n += 1
+            def_format +='{'+str(n)+'}}'
+        else:
+            def_format += str(chinese(plist[0][listnum],2)+6)+'}'
+        n += 1
+        listnum += 1
+        length -= 1
+
+    msgStr = ''
+    for i in plist:
+        i.insert(align_column_int,align_column_maxlen+8-chinese(i[align_column_int-1]))
+        print(i)
+        msgStr += def_format.format(*i)+'\n'
+
+    return msgStr[:-1]
+
+
+
+def chinese(data,mode=1):
+    '''
+    mode=1 默认返回str 中文字符个数，mode=2返回字符串宽度   中文占2，其他占1
+    :param data:str
+    :param mode:
+    :return:返回字符串宽度
+    '''
+    count = 0
+    if mode == 1:
+
+        for s in data:
+            if ord(s) > 127:
+                count += 1
+    elif mode == 2:
+        for s in data:
+            if ord(s) >127:
+                count += 2
+            else:
+                count += 1
+    return count
