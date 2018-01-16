@@ -454,15 +454,15 @@ def copyAllFileto(sourceDir,targetDir):
     else:
         for file in backfile:
             try:
-                shutil.copy(sourceDir+'\\'+file,targetDir)
-                os.remove(sourceDir+'\\'+file)
+                shutil.copy2(sourceDir+'\\'+file,targetDir)
                 width = len(file)
                 if width>maxlen:
                     maxlen = width
-                msgList.append([file,'还原成功!'])
+                msgList.append([file,time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(sourceDir+'\\'+file))),'还原成功!'])
+                os.remove(sourceDir + '\\' + file)
             except Exception as e:
                 print(e)
-                msgList.append([file,e])
+                msgList.append([file,'',e])
         if len(os.listdir(sourceDir)) == 0:
             shutil.rmtree(sourceDir)
         msg = format_printMSG(msgList,1,maxlen)
@@ -624,7 +624,7 @@ def backup_file(gamedir,currentGame,fileList,folder):
         maxlen = 0
         for file in fileList:
             file_length = len(file)
-            shutil.copy(gamedir+'\\'+currentGame+'\\'+file,backup_path)
+            shutil.copy2(gamedir+'\\'+currentGame+'\\'+file,backup_path)
             if file_length > maxlen:
                 maxlen = file_length
             msglist.append(['被覆盖文件',file,' 已备份！'])
