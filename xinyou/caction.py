@@ -9,6 +9,8 @@ import tempfile
 import time
 import subprocess
 import paramiko
+from xinyou import saction
+
 
 # 默认桌面目录
 desktop_dir = 'D:\\Desktop\\'
@@ -56,6 +58,10 @@ def command_simpleCheck(command,cmdaction,currentGame,gameDir):
         elif cmdList[0] == 'update':
             # 判断上传的文件是否存在
             return update_check(currentGame,cmdList[1])
+        elif cmdList[0] == 'back':
+            if not cmdList[1] in ['ini','exe','dll']:
+                print('back 命令错误help back 查询命令的使用方法！')
+                return False
 
     return True
 
@@ -298,23 +304,36 @@ def transfer_File(host,currentGame,fileList_Info,mode='put'):
         # print('filelist:',end='')
         # print(fileList_Info)
 
+        msgList = []
+        maxlen = 0
         for filelist in fileList_Info:
+            # 传输的文件名称
+            filename = filelist[0].split('\\')[-1]
+            filelen = len(filename)
+            if filelen > maxlen:
+                maxlen = filelen
             try:
                 if mode == 'put':
                     sftp.put(filelist[0],filelist[1])
-                    print('文件 '+filelist[0].split('\\')[-1]+' 上传成功!')
+                    msgList.append(['文件',filename,'上传成功！'])
+                    # print('文件 '+filelist[0].split('\\')[-1]+' 上传成功！')
                 elif mode == 'get':
                     sftp.get(filelist[0],filelist[1])
-                    print('文件   '+filelist[0].split('\\')[-1]+'  成功下载到桌面目录    '+currentGame)
+                    msgList.append(['文件', filename, '成功下载到桌面目录！'])
+                    # print('文件   '+filelist[0].split('\\')[-1]+'  成功下载到桌面目录!')
                 elif mode == 'update':
                     sftp.put(filelist[0], filelist[1])
-                    print('文件   '+filelist[0].split('\\')[-1]+'  更新成功！')
+                    msgList.append(['文件',filename, '更新成功！'])
+                    # print('文件   '+filelist[0].split('\\')[-1]+'  更新成功！')
                 else:
                     print(mode + ' transfe rFile 模式错误！')
             except Exception as e:
                 print(filelist[0],end='')
                 print(filelist[1],end='')
                 print(e)
+
+        msg = saction.format_printMSG(msgList,2,maxlen)
+        print(msg)
     else:
        print('上传文件列表为空！')
 

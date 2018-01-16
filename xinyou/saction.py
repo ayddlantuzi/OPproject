@@ -406,7 +406,66 @@ def twoCommand_check(cmdList,currentGame):
         # 升级前 建立备份目录  并备份被升级的文件
         msg = update_cmd_server(gamedir,currentGame[0],cmdList[1])
 
+    elif cmdList[0] =='back':
+        msg = back_cmd_server(gamedir,currentGame[0],cmdList[1])
 
+    return msg
+
+
+def back_cmd_server(gamedir,currentGame,suffixal):
+    '''
+    还原备份文件，还原最近一次备份
+    :param gamedir:
+    :param currentGame:
+    :param suffixal: ini  dll  exe三种
+    :return:
+    '''
+    msg = ''
+    back_source_dir = gamedir+currentGame+'\\backup\\'+suffixal
+    print(back_source_dir)
+
+    if os.path.exists(back_source_dir):
+        file = os.listdir(back_source_dir)
+        if len(file) == 0:
+            msg = '没有'+suffixal+' 的备份文件！'
+        else:
+            backdir = back_source_dir+'\\'+file.pop(-1)
+            msg = copyAllFileto(backdir,gamedir+currentGame)
+    else:
+        msg = '没有'+suffixal+' 的备份文件！'
+
+    msg = 'print@'+msg
+    return msg
+
+
+def copyAllFileto(sourceDir,targetDir):
+    '''
+    将目录下所有的还原到 游戏目录，并且删除目录
+    :param sourceDir:备份目录，游戏目录
+    :param targetDir:
+    :return:
+    '''
+    msgList = []
+    maxlen = 0
+    backfile = os.listdir(sourceDir)
+    if len(backfile) == 0:
+        msg = sourceDir + '目录中没有文件,目录被删除！'
+        shutil.rmtree(sourceDir)
+    else:
+        for file in backfile:
+            try:
+                shutil.copy(sourceDir+'\\'+file,targetDir)
+                os.remove(sourceDir+'\\'+file)
+                width = len(file)
+                if width>maxlen:
+                    maxlen = width
+                msgList.append([file,'还原成功!'])
+            except Exception as e:
+                print(e)
+                msgList.append([file,e])
+        if len(os.listdir(sourceDir)) == 0:
+            shutil.rmtree(sourceDir)
+        msg = format_printMSG(msgList,1,maxlen)
     return msg
 
 def update_cmd_server(gamedir,currentGame,file_str):
@@ -447,6 +506,8 @@ def show_cmd_server(gamedir,currentGame,info):
     :return: 返回打印的消息
     '''
     msg = ''
+    msgList = []
+    maxlen = 0
     if info == 'room':
         path = gamedir+currentGame+'\\run'
         if os.path.exists(path):
@@ -457,12 +518,16 @@ def show_cmd_server(gamedir,currentGame,info):
                     xmlfile.append(i)
             if len(xmlfile)>0:
                 for i in xmlfile:
-                    n='    未启用！'
+                    n='未启用！'
+                    whidth = chinese(i,2)
+                    if whidth>maxlen:
+                        maxlen=whidth
+
                     if portISopen(getPortFromXML(i)):
                         # 端口状态，端口被占用 n='1'
-                        n='    已启用！'
-                    msg += i+n +'\n'
-                msg = msg[:-1]
+                        n='已启用！'
+                    msgList.append([i,n])
+                msg = format_printMSG(msgList,1,maxlen)
             else:
                 msg = '游戏目录 ' + path + '中没有房间配置文件！'
         else:
@@ -473,8 +538,12 @@ def show_cmd_server(gamedir,currentGame,info):
             game_folder_files = os.listdir(path)
         if len(game_folder_files)>0:
             for file in game_folder_files:
-                msg += file + '    ' +time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(path+'\\'+file))) +'\n'
-            msg = msg[:-1]
+                whidth = chinese(file,2)
+                if whidth > maxlen:
+                    maxlen = whidth
+                msgList.append([file,time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(path+'\\'+file)))])
+                # msg += file + '    ' +time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(path+'\\'+file))) +'\n'
+            msg = format_printMSG(msgList,1,maxlen)
         else:
             msg = '游戏目录 ' + path + '中没有文件！'
     else:
@@ -551,14 +620,19 @@ def backup_file(gamedir,currentGame,fileList,folder):
     os.makedirs(backup_path)
 
     if folder in ['ini','dll','exe']:
-        msg = 'print@'
+        msglist = []
+        maxlen = 0
         for file in fileList:
+            file_length = len(file)
             shutil.copy(gamedir+'\\'+currentGame+'\\'+file,backup_path)
-            msg +=  '被覆盖文件'+ file +' 已备份！\n'
-        msg = msg[:-1]
+            if file_length > maxlen:
+                maxlen = file_length
+            msglist.append(['被覆盖文件',file,' 已备份！'])
+
     else:
         msg='print@saction.py  backup_file方法错误，请检查代码！'
 
+    msg = 'print@'+format_printMSG(msglist,2,maxlen)
     return msg
 
 
@@ -654,7 +728,7 @@ def format_printMSG(plist,align_column_int,align_column_maxlen):
             n += 1
             def_format +='{'+str(n)+'}}'
         else:
-            def_format += str(chinese(plist[0][listnum],2)+6)+'}'
+            def_format += str(chinese(plist[0][listnum],2)+4)+'}'
         n += 1
         listnum += 1
         length -= 1
@@ -662,7 +736,7 @@ def format_printMSG(plist,align_column_int,align_column_maxlen):
     msgStr = ''
     for i in plist:
         i.insert(align_column_int,align_column_maxlen+8-chinese(i[align_column_int-1]))
-        print(i)
+        # print(i)
         msgStr += def_format.format(*i)+'\n'
 
     return msgStr[:-1]

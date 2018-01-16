@@ -13,7 +13,7 @@ currentGame=''
 #当前消息
 currentMsg=''
 # 命令动作
-cmdAction = ['start','update','get','put','show']
+cmdAction = ['start','update','get','put','show','back','compare']
 
 HOST = '121.196.201.156'
 PORT= 21567
