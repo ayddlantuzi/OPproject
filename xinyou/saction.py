@@ -398,8 +398,6 @@ def twoCommand_check(cmdList,currentGame):
     elif cmdList[0] == 'put':
         msg = put_check_server(gamedir,currentGame[0],cmdList[1])
 
-        return msg
-
     elif cmdList[0] == 'update':
         # update exe 升级servicesLoader
         # update dll 升级游戏dll
@@ -408,6 +406,49 @@ def twoCommand_check(cmdList,currentGame):
 
     elif cmdList[0] =='back':
         msg = back_cmd_server(gamedir,currentGame[0],cmdList[1])
+
+    elif cmdList[0] == 'compare':
+        msg =compare_cmd_server(gamedir,currentGame[0],cmdList[1])
+
+
+    return msg
+
+def compare_cmd_server(gamedir,currentGame,suffixal):
+    '''
+    比较 游戏服务器 和本地SVN的  文件最新修改时间
+    :param gamedir:
+    :param currentGame:
+    :param suffixal:
+    :return:
+    '''
+    msg = ''
+    compareFilePath= gamedir+currentGame+'\\'
+    compareFileSuffixal = []
+    compareFile = []
+    dllfile = re.sub('^\\d{2,3}', '', currentGame) + '.dll'
+
+    if suffixal == 'exe':
+        compareFileSuffixal = ['.exe','.dll']
+    elif suffixal == 'dll':
+        compareFileSuffixal = ['.dll']
+    else:
+        msg = 'print@compare '+suffixal+' 命令错误！'
+    if len(compareFileSuffixal) == 1:
+
+        if os.path.exists(compareFilePath+dllfile):
+            compareFile.append([dllfile,time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(compareFilePath+dllfile)))])
+            msg = 'compare@' + transfer_list_2_str(compareFile)
+        else:
+            msg = 'print@游戏目录中没有 '+dllfile+' 文件！'
+    else:
+        for file in os.listdir(compareFilePath):
+            if file[-4:] in compareFileSuffixal and file != dllfile:
+                compareFile.append([file,time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(compareFilePath+file)))])
+
+        if len(compareFile) >0:
+            msg = 'compare@'+transfer_list_2_str(compareFile)
+        else:
+            msg = 'print@游戏目录中没有 .dll 文件！'
 
     return msg
 
@@ -687,10 +728,8 @@ def command_ServerCheck(command,currentGame,table):
     :param table:当前服务器 游戏资源表
     :return:
     '''
-
     cmdList = command.split()
     cmdNum = len(cmdList)
-
 
     msg = ''
 
@@ -721,6 +760,7 @@ def format_printMSG(plist,align_column_int,align_column_maxlen):
     def_format = ''
     length = len(plist[0])
     n=0
+    plistlen = len(plist)
     listnum = 0
     while length > 0:
         def_format += '{'+str(n)+':'
@@ -728,17 +768,23 @@ def format_printMSG(plist,align_column_int,align_column_maxlen):
             n += 1
             def_format +='{'+str(n)+'}}'
         else:
-            def_format += str(chinese(plist[0][listnum],2)+4)+'}'
+            if plistlen > 1:
+                def_format += str(chinese(plist[1][listnum],2)+4)+'}'
+            else:
+                def_format += str(chinese(plist[0][listnum], 2) + 4) + '}'
         n += 1
         listnum += 1
         length -= 1
 
     msgStr = ''
+    # print('max',end='')
+    # print(align_column_maxlen)
     for i in plist:
         i.insert(align_column_int,align_column_maxlen+8-chinese(i[align_column_int-1]))
+        # print(align_column_maxlen+8-chinese(i[align_column_int-1]))
         # print(i)
         msgStr += def_format.format(*i)+'\n'
-
+    # print(def_format)
     return msgStr[:-1]
 
 

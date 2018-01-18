@@ -62,8 +62,76 @@ def command_simpleCheck(command,cmdaction,currentGame,gameDir):
             if not cmdList[1] in ['ini','exe','dll']:
                 print('back 命令错误help back 查询命令的使用方法！')
                 return False
-
+        elif cmdList[0] == 'compare':
+            if not cmdList[1] in ['exe','dll']:
+                print('compare 命令错误 help compare 查询命令的使用方法')
+                return False
     return True
+
+def compare_cmd_client(currentGame,cmd_1):
+    '''
+    将服务器返回的  文件 修改日期，和SVN的 修改日期整合
+    :param currentGame:
+    :param cmd_1:
+    :return:
+    '''
+    global svnServiceLoader_dir
+    global dlls_dir
+
+    maxlen = 0
+    msg = ''
+    compareFile = transfer_list_str_2_list(cmd_1)
+    # print(compareFile)
+    # 列表长度为1时候  游戏.dll   >1的时候  serviceLoader.exe   .. .dll
+    num = len(compareFile)
+    if num == 1:
+        dllname = re.sub('^\\d{2,3}','',currentGame)+'.dll'
+        dllpath = dlls_dir+dllname
+        if os.path.exists(dllpath):
+            maxlen = len(dllname)
+            compareFile[0].append(time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(dllpath))))
+        else:
+            compareFile[0].append('')
+    else:
+        # 统计svn目录下的 dll 和exe文件
+        svnFile = []
+        for file in os.listdir(svnServiceLoader_dir):
+            if file[-4:] == '.dll':
+                svnFile.append(file)
+        svnFile.append('ServiceLoader.exe')
+
+        for x in range(num):
+            length = len(compareFile[x][0])
+            if length > maxlen:
+                maxlen = length
+
+
+            status = False
+            removeObj = ''
+            for file in svnFile:
+                if compareFile[x][0] == file:
+                    compareFile[x].append(time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(svnServiceLoader_dir+file))))
+                    status = True
+                    removeObj = file
+                    break
+            if status:
+                svnFile.remove(removeObj)
+            else:
+                compareFile[x].append('')
+
+        if len(svnFile) >0:
+            for file in svnFile:
+                length = len(file)
+                if length > maxlen:
+                    maxlen = length
+                compareFile.append([file,'',time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(os.path.getmtime(svnServiceLoader_dir+file)))])
+
+    compareFile.insert(0,['File','Using','SVN'])
+
+    msg = saction.format_printMSG(compareFile,1,maxlen)
+    print(msg)
+
+
 
 
 def update_check(currentGame,cmd_1):
@@ -103,7 +171,7 @@ def update_check(currentGame,cmd_1):
         else:
             print('本地目录 '+svnServiceLoader_dir+' 不存在！')
     elif cmd_1 == 'dll':
-        dll_name = re.sub('\d','',currentGame)+'.dll'
+        dll_name = re.sub('^\\d{2,3}','',currentGame)+'.dll'
         dll_dir =dlls_dir + dll_name
         if os.path.exists(dll_dir):
             # 返回上传的dll文件
@@ -293,8 +361,6 @@ def transfer_File(host,currentGame,fileList_Info,mode='put'):
         if not os.path.exists(desktop_dir+currentGame):
             os.makedirs(desktop_dir+currentGame)
             print(desktop_dir+currentGame+'   目录不存在，创建成功！')
-
-
     if len(fileList_Info) != 0:
         try:
             sftp = paramiko.SFTPClient.from_transport(transport)
@@ -315,14 +381,18 @@ def transfer_File(host,currentGame,fileList_Info,mode='put'):
             try:
                 if mode == 'put':
                     sftp.put(filelist[0],filelist[1])
+                    sftp.utime(filelist[1],(os.path.getatime(filelist[0]),os.path.getmtime(filelist[0])))
                     msgList.append(['文件',filename,'上传成功！'])
                     # print('文件 '+filelist[0].split('\\')[-1]+' 上传成功！')
                 elif mode == 'get':
                     sftp.get(filelist[0],filelist[1])
+                    a = paramiko.sftp_attr.SFTPAttributes.from_stat(sftp.stat(filelist[0]))
+                    os.utime(filelist[1],(a.st_atime,a.st_mtime))
                     msgList.append(['文件', filename, '成功下载到桌面目录！'])
                     # print('文件   '+filelist[0].split('\\')[-1]+'  成功下载到桌面目录!')
                 elif mode == 'update':
                     sftp.put(filelist[0], filelist[1])
+                    sftp.utime(filelist[1], (os.path.getatime(filelist[0]), os.path.getmtime(filelist[0])))
                     msgList.append(['文件',filename, '更新成功！'])
                     # print('文件   '+filelist[0].split('\\')[-1]+'  更新成功！')
                 else:

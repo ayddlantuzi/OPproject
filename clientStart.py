@@ -104,6 +104,8 @@ while True:
             caction.transfer_File(HOST,currentGame,caction.transfer_list_str_2_list(back_msg_str[1]),'put')
         elif back_msg_str[0] =='update':
             caction.transfer_File(HOST,currentGame,caction.transfer_list_str_2_list(back_msg_str[1]),'update')
+        elif back_msg_str[0] == 'compare':
+            caction.compare_cmd_client(currentGame,back_msg_str[1])
         else:
             pass
             # print('client调试',end='')
