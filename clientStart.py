@@ -26,10 +26,10 @@ tcpCliSock.connect(ADDR)
 print('连接成功:'+str(tcpCliSock.getpeername()))
 # 拿到服务器第一次发过来的table
 firstINFO = tcpCliSock.recv(BUFSIZ).decode()
-print(firstINFO)
+# print(firstINFO)
 #将str table转换成List
 table = caction.unpackDirINFOstr(firstINFO)
-print(table)
+# print(table)
 
 
 #打印所有游戏主目录
@@ -63,6 +63,7 @@ while True:
             data = 'put ' + checkResult[1]
         elif checkResult[0] == 'update':
             data = 'update '+ checkResult[1]
+
     if data == 'cls':
         os.system('cls')
         continue
@@ -77,7 +78,8 @@ while True:
         break
 
 
-
+    # print('发送的命令：',end='')
+    # print(data)
     # 发送命令
     tcpCliSock.send(data.encode())
     time.sleep(0.1)
@@ -90,8 +92,8 @@ while True:
 
     # caction.recvBackMSG(data,currentGame)
     back_msgList = data.split('+')
-    print('client 接收到的消息#')
-    print(back_msgList)
+    # print('client 接收到的消息#')
+    # print(back_msgList)
     for onecmd in back_msgList:
         back_msg_str = onecmd.split('@')
         if back_msg_str[0]=='print':

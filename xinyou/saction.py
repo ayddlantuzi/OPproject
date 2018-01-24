@@ -136,8 +136,8 @@ def get_gamexmlANDport(path,xml):
         for port in xml:
             status = True
             for file in xml_file:
-                fileport = re.sub('\D','',file)
-                if port == file:
+                fileport = file[:-4][-5:]
+                if port == fileport:
                     temp_file.append(file)
                     temp_port.append(port)
                     n += 1
@@ -410,7 +410,6 @@ def twoCommand_check(cmdList,currentGame):
     elif cmdList[0] == 'compare':
         msg =compare_cmd_server(gamedir,currentGame[0],cmdList[1])
 
-
     return msg
 
 def compare_cmd_server(gamedir,currentGame,suffixal):
@@ -559,14 +558,14 @@ def show_cmd_server(gamedir,currentGame,info):
                     xmlfile.append(i)
             if len(xmlfile)>0:
                 for i in xmlfile:
-                    n='未启用！'
+                    n='=====未启用！'
                     whidth = chinese(i,2)
                     if whidth>maxlen:
                         maxlen=whidth
 
                     if portISopen(getPortFromXML(i)):
                         # 端口状态，端口被占用 n='1'
-                        n='已启用！'
+                        n='>>>>>已启用！'
                     msgList.append([i,n])
                 msg = format_printMSG(msgList,1,maxlen)
             else:
@@ -692,22 +691,47 @@ def get_filter_File(gamedir,currentGame,get_fuzzy):
     msg = ''
     filelist = []
     gamefile = os.listdir(gamedir+'\\'+currentGame)
-    if get_fuzzy == 'ini':
+    if get_fuzzy.lower() == 'ini':
         for file in gamefile:
-            if file[-3:] == 'ini':
+            if file[-3:].lower() == 'ini':
                 sourceServer ='\\'+currentGame + '\\' + file
                 targetClient = desktop_dir+currentGame+'\\'+file
                 filelist.append([sourceServer,targetClient])
     else:
-        if get_fuzzy in gamefile:
-            sourceServer = '\\' + currentGame + '\\' + get_fuzzy
-            targetClient = desktop_dir + currentGame + '\\' + get_fuzzy
-            filelist.append([sourceServer, targetClient])
-        else:
+        status = True
+        for file in gamefile:
+            if get_fuzzy.lower() == file.lower():
+                sourceServer = '\\' + currentGame + '\\' + file
+                targetClient = desktop_dir + currentGame + '\\' + file
+                filelist.append([sourceServer, targetClient])
+                status = False
+                break
+        if status:
             msg = ('%s@%s' % ('print', get_fuzzy+'在游戏目录'+currentGame+'  中未找到！'))
             return msg
-    msg =  ('%s@%s' % ('get',transfer_list_2_str(filelist)))
+    print(filelist)
+    msg = ('%s@%s' % ('get', transfer_list_2_str(filelist)))
+    print('----------------')
+    print(msg)
     return msg
+
+
+
+    #     if get_fuzzy.lower():
+    #         print(get_fuzzy)
+    #         sourceServer = '\\' + currentGame + '\\' + get_fuzzy
+    #         targetClient = desktop_dir + currentGame + '\\' + get_fuzzy
+    #         filelist.append([sourceServer, targetClient])
+    #     else:
+    #         msg = ('%s@%s' % ('print', get_fuzzy+'在游戏目录'+currentGame+'  中未找到！'))
+    #         return msg
+    # msg =  ('%s@%s' % ('get',transfer_list_2_str(filelist)))
+    # return msg
+
+def list_lower_map(c):
+    return c.lower()
+
+
 
 def transfer_list_2_str(filelist):
     msg = ''
