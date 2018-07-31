@@ -37,7 +37,7 @@ caction.printGameDir(table[1])
 
 
 
-#控制是否读取服务器端消息的开关
+#控制是否读取服务器端消息的 开关
 recv_status= True
 
 while True:
@@ -71,8 +71,6 @@ while True:
     if data == 'exit':
         tcpCliSock.close()
         break
-
-
 
     if not data:
         break

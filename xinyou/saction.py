@@ -16,7 +16,7 @@ desktop_dir = 'D:\\Desktop\\'
 
 def runServiceLoader(path,xml):
     '''
-    运行房间 path路径，xml配置文件list
+    运行房间 path路径，xml配置文件端口的list
     :param path: 游戏路径 str
     :param xml: 游戏配置文件 list
     :return: 启动游戏后的消息  格式 'E:/game/游戏/12001.xml   命令执行！/r/n' 返回
@@ -107,10 +107,11 @@ def get_gamexmlANDport(path,xml):
     获得run目录下所有的房间配置
     :param path: 游戏目录
     :param xml: 启动的 游戏xml
-    :return:[n,[],[]] [xml文件List，对应xml的Port List]
-    端口号都是5位数字
+    :return:[n,[],[]] [xml文件List，对应xml的Port List]   ,  消息List['','','','']
+            [2,[ '疯狂跑得快新手场12601.xml' , '疯狂跑得快初级场12611.xml' ],[ 12601 , 12611 ]]
+    端口号都是5位数字 文件名称末尾的5位
     '''
-    print('get_gamexmlANDport   start')
+    # print('get_gamexmlANDport   start')
     temp_file = []
     xml_file = []
     temp_port = []
@@ -181,9 +182,13 @@ def get_gamexmlANDport(path,xml):
 
 def check_xml_port_open(xmllist):
     '''
-    检查房间xml的端口是否占用
-    :param xmllist:
-    :return:
+    检查房间xml的端口是否占用   xmllst中 相关占用端口移除，并返回消息
+    :param xmllist:   [3,[ '疯狂跑得快新手场12601.xml' , '疯狂跑得快初级场12611.xml' , '疯狂跑得快顶级场12631.xml'],[ 12601 , 12611 , 12631]]
+    :return:  筛选后的xmllist,端口占用消息['','']
+        xmllist   [3,[ '疯狂跑得快新手场12601.xml' , '疯狂跑得快初级场12611.xml' , '疯狂跑得快顶级场12631.xml'],[ 12601 , 12611 , 12631]]
+        如果12601，12611 被占用
+        返回 [1,[ '疯狂跑得快顶级场12631.xml'],[ 12631]]  , ['12601   端口被占用！'，'12611   端口被占用！']
+
     '''
     print('check_xml_port_open   start')
     print('xmllist:',end='')
@@ -219,9 +224,9 @@ def check_xml_port_open(xmllist):
 
 def portISopen(port):
     '''
-    判断本地端口是否占用  True占用   False未占用
-    :param port:
-    :return:
+    判断本地端口是否占用
+    :param port:端口是否被占用
+    :return:   True占用   False未占用
     '''
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(0.1)
@@ -270,6 +275,17 @@ def getDirINFO(path):
 
 
 def getDirINFOstr_and_list(path):
+    '''
+    返回游戏目录下  所有的游戏目录 run目录 xml文件
+    :param path:  游戏根目录
+    :return:
+        firstList  根目录下所有的文件和目录         所有 游戏目录
+        secondList 根目录所有包括run子目录的 目录   筛选过的含有run房间目录的 游戏目录
+        thirdList  所有子目录run 下面的.xml文件 []
+
+        return  字符串版本'' ，[firstList,secondList,thirdList集合]
+    '''
+
     firstList = os.listdir(path)
     # print('firstList:',end='')
     # print(firstList)
@@ -411,6 +427,7 @@ def twoCommand_check(cmdList,currentGame):
         msg =compare_cmd_server(gamedir,currentGame[0],cmdList[1])
 
     return msg
+
 
 def compare_cmd_server(gamedir,currentGame,suffixal):
     '''
